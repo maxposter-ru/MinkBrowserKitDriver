@@ -2,10 +2,8 @@
 
 namespace Behat\Mink\Driver;
 
-use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Exception\DriverException;
 use Behat\Mink\Exception\ElementNotFoundException;
-use Behat\Mink\Session;
 use Symfony\Component\BrowserKit\Client;
 use Symfony\Component\BrowserKit\Cookie;
 use Symfony\Component\BrowserKit\Response;
@@ -30,7 +28,6 @@ use Symfony\Component\HttpFoundation\Response as HttpFoundationResponse;
  */
 class BrowserKitDriver extends CoreDriver
 {
-    private $session;
     private $client;
     private $forms = array();
     private $started = false;
@@ -56,16 +53,6 @@ class BrowserKitDriver extends CoreDriver
     public function getClient()
     {
         return $this->client;
-    }
-
-    /**
-     * Sets driver's current session.
-     *
-     * @param Session $session
-     */
-    public function setSession(Session $session)
-    {
-        $this->session = $session;
     }
 
     /**
@@ -340,11 +327,7 @@ class BrowserKitDriver extends CoreDriver
     }
 
     /**
-     * Finds elements with specified XPath query.
-     *
-     * @param string $xpath
-     *
-     * @return array array of NodeElements
+     * {@inheritdoc}
      */
     public function find($xpath)
     {
@@ -352,7 +335,7 @@ class BrowserKitDriver extends CoreDriver
 
         $elements = array();
         foreach ($nodes as $i => $node) {
-            $elements[] = new NodeElement(sprintf('(%s)[%d]', $xpath, $i + 1), $this->session);
+            $elements[] = sprintf('(%s)[%d]', $xpath, $i + 1);
         }
 
         return $elements;
@@ -513,7 +496,7 @@ class BrowserKitDriver extends CoreDriver
     public function isSelected($xpath)
     {
         if (!count($crawler = $this->getCrawler()->filterXPath($xpath))) {
-            throw new ElementNotFoundException($this->session, 'option', 'xpath', $xpath);
+            throw new ElementNotFoundException($this, 'option', 'xpath', $xpath);
         }
 
         $optionValue = $this->getCrawlerNode($crawler->eq(0))->getAttribute('value');
@@ -534,7 +517,7 @@ class BrowserKitDriver extends CoreDriver
     public function click($xpath)
     {
         if (!count($nodes = $this->getCrawler()->filterXPath($xpath))) {
-            throw new ElementNotFoundException($this->session, 'link or button', 'xpath', $xpath);
+            throw new ElementNotFoundException($this, 'link or button', 'xpath', $xpath);
         }
 
         $node = $nodes->eq(0);
@@ -582,7 +565,7 @@ class BrowserKitDriver extends CoreDriver
     public function submitForm($xpath)
     {
         if (!count($nodes = $this->getCrawler()->filterXPath($xpath))) {
-            throw new ElementNotFoundException($this->session, 'form', 'xpath', $xpath);
+            throw new ElementNotFoundException($this, 'form', 'xpath', $xpath);
         }
 
         $this->submit($nodes->eq(0)->form());
@@ -658,7 +641,7 @@ class BrowserKitDriver extends CoreDriver
     protected function getFormField($xpath)
     {
         if (!count($crawler = $this->getCrawler()->filterXPath($xpath))) {
-            throw new ElementNotFoundException($this->session, 'form field', 'xpath', $xpath);
+            throw new ElementNotFoundException($this, 'form field', 'xpath', $xpath);
         }
 
         $fieldNode = $this->getCrawlerNode($crawler);
@@ -699,7 +682,7 @@ class BrowserKitDriver extends CoreDriver
 
         // find form button
         if (null === $buttonNode = $this->findFormButton($formNode)) {
-            throw new ElementNotFoundException($this->session, 'form submit button for field with xpath "' . $xpath . '"');
+            throw new ElementNotFoundException($this, 'form submit button for field with xpath "' . $xpath . '"');
         }
 
         $this->forms[$formId] = new Form($buttonNode, $this->client->getRequest()->getUri());
